@@ -1,0 +1,29 @@
+name: Build macOS App
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, ai-cover-matcher]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install
+        run: pip install -r requirements.txt
+      - name: Build app
+        run: pyinstaller --noconfirm --windowed --name 'AI Cover Matcher' --collect-all transformers --collect-all torch app.py
+      - name: Ad-hoc sign
+        run: codesign --force --deep --sign - 'dist/AI Cover Matcher.app'
+      - name: Package
+        run: ditto -c -k --sequesterRsrc --keepParent 'dist/AI Cover Matcher.app' 'AI-Cover-Matcher-macOS.zip'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AI-Cover-Matcher-macOS
+          path: AI-Cover-Matcher-macOS.zip
+          retention-days: 30
